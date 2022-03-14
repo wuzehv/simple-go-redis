@@ -8,13 +8,13 @@ import (
 
 type redisConn struct {
 	addr string
-	db   int
+	port int
 	net.Conn
 }
 
-func New(addr string, db int) (*redisConn, error) {
-	r := &redisConn{addr: addr, db: db}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", addr, db))
+func New(addr string, port int) (*redisConn, error) {
+	r := &redisConn{addr: addr, port: port}
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", addr, port))
 	if err != nil {
 		return nil, err
 	}
@@ -46,5 +46,5 @@ func (r *redisConn) Select(db int) (interface{}, error) {
 }
 
 func (r *redisConn) String() string {
-	return r.addr + ":" + strconv.Itoa(r.db)
+	return r.addr + ":" + strconv.Itoa(r.port)
 }
