@@ -1,25 +1,23 @@
 package simple_go_redis
 
 import (
-	"fmt"
 	"net"
 	"strconv"
 )
 
 type redisConn struct {
-	addr string
-	port int
-	net.Conn
+	address string
+	conn    net.Conn
 }
 
-func New(addr string, port int) (*redisConn, error) {
-	r := &redisConn{addr: addr, port: port}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", addr, port))
+func New(address string) (*redisConn, error) {
+	r := &redisConn{address: address}
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, err
 	}
 
-	r.Conn = conn
+	r.conn = conn
 	return r, nil
 }
 
@@ -33,12 +31,12 @@ func (r *redisConn) Do(params ...string) (interface{}, error) {
 		})
 	}
 
-	_, err := r.Write([]byte(res.String()))
+	_, err := r.write(res)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseResponse(r.Conn)
+	return parseResponse(r.conn)
 }
 
 func (r *redisConn) Select(db int) (interface{}, error) {
@@ -46,5 +44,13 @@ func (r *redisConn) Select(db int) (interface{}, error) {
 }
 
 func (r *redisConn) String() string {
-	return r.addr + ":" + strconv.Itoa(r.port)
+	return r.address
+}
+
+func (r *redisConn) write(p *redisProtocol) (int, error) {
+	return r.conn.Write(p.Bytes())
+}
+
+func (r *redisConn) Close() error {
+	return r.conn.Close()
 }

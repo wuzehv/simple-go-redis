@@ -6,11 +6,10 @@ import (
 )
 
 const (
-	IP   = "127.0.0.1"
-	PORT = 6379
+	address = "127.0.0.1:6379"
 )
 
-var r, _ = simple_go_redis.New(IP, PORT)
+var r, _ = simple_go_redis.New(address)
 
 func ExampleRedisConn_Interactive() {
 	r.Interactive()

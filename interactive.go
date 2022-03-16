@@ -33,13 +33,13 @@ func (r *redisConn) Interactive() {
 
 		c := parseInput(n)
 
-		_, err = r.Write([]byte(c.String()))
+		_, err = r.write(c)
 		if err != nil {
 			fmt.Println("request error:", err)
 			continue
 		}
 
-		res, err := parseResponse(r)
+		res, err := parseResponse(r.conn)
 		if err != nil {
 			fmt.Println("response error:", err)
 			continue

@@ -2,15 +2,21 @@ package simple_go_redis
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"io"
 	"strconv"
-	"strings"
 )
 
 const (
-	delimiter   = "\r\n"
+	CRLF        = "\r\n"
 	noKeyReturn = -1
+
+	flagStart        = '*'
+	flagParamLen     = '$'
+	flagSimpleReturn = '+'
+	flagErrorReturn  = '-'
+	flagIntReturn    = ':'
 )
 
 type paramLen struct {
@@ -23,20 +29,20 @@ type redisProtocol struct {
 	params      []paramLen
 }
 
-func (rdc *redisProtocol) String() string {
-	s := strings.Builder{}
-	s.WriteString("*")
+func (rdc *redisProtocol) Bytes() []byte {
+	s := bytes.Buffer{}
+	s.WriteByte(flagStart)
 	s.WriteString(strconv.Itoa(rdc.numOfParams))
-	s.WriteString(delimiter)
+	s.WriteString(CRLF)
 	for _, v := range rdc.params {
-		s.WriteString("$")
+		s.WriteByte(flagParamLen)
 		s.WriteString(strconv.Itoa(v.len))
-		s.WriteString(delimiter)
+		s.WriteString(CRLF)
 		s.WriteString(v.val)
-		s.WriteString(delimiter)
+		s.WriteString(CRLF)
 	}
 
-	return s.String()
+	return s.Bytes()
 }
 
 // parseResponse 解析输出
@@ -49,18 +55,18 @@ func parseResponse(reader io.Reader) (interface{}, error) {
 		}
 
 		switch r[0] {
-		case '+':
+		case flagSimpleReturn:
 			return nil, nil
-		case '-':
+		case flagErrorReturn:
 			return nil, errors.New(string(r[1:]))
-		case ':':
+		case flagIntReturn:
 			l, err := strconv.Atoi(string(r[1:]))
 			if err != nil {
 				return nil, err
 			}
 
 			return l, nil
-		case '$':
+		case flagParamLen:
 			l, err := strconv.Atoi(string(r[1:]))
 			if err != nil {
 				return nil, err
@@ -76,7 +82,7 @@ func parseResponse(reader io.Reader) (interface{}, error) {
 			}
 
 			return r[:l], nil
-		case '*':
+		case flagStart:
 			l, err := strconv.Atoi(string(r[1:]))
 			if err != nil {
 				return nil, err
